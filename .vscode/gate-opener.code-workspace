@@ -1,0 +1,31 @@
+{
+  "folders": [
+    {
+      "path": "../"
+    },
+    {
+      "name": "Pico (W) Remote Workspace",
+      "uri": "pico:"
+    }
+  ],
+  "settings": {
+    "python.languageServer": "Pylance",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.terminal.activateEnvironment": false,
+    "python.analysis.diagnosticSeverityOverrides": {
+      "reportMissingModuleSource": "none"
+    },
+    "python.analysis.typeshedPaths": ["~/.micropico-stubs/included"],
+    "python.analysis.extraPaths": ["~/.micropico-stubs/included"],
+
+    "[python]": {
+      "editor.defaultFormatter": "ms-python.black-formatter",
+      "editor.insertSpaces": true,
+      "editor.tabSize": 4
+    },
+
+    "micropico.openOnStart": true,
+    "micropico.syncFolder": "src",
+    "micropico.syncAllFileTypes": true
+  }
+}
