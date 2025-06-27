@@ -3,18 +3,17 @@ import socket
 import time
 
 from env import SSID, WLAN_PASS
+from error_management import ErrorSleep, on_error as on_error_generic
 from machine import Pin
 
 GATE_PIN = Pin(15, Pin.OUT)
 PICO_LED = Pin("LED", Pin.OUT)
 
+ERROR_SLEEP = ErrorSleep()
+
 
 def on_error(error: Exception):
-    # This is to notify that something went wrong
-    PICO_LED.on()
-
-    with open("error.log", "w") as f:
-        f.write(str(error))
+    return on_error_generic(error, PICO_LED)
 
 
 def read_html_template():
@@ -26,7 +25,7 @@ def read_html_template():
 
 
 def write_wlan_status(content: str):
-    s = "WLAN_STATUS: " + content
+    s = "[WLAN_STATUS]: " + content
     print(s)
     with open("wlan_status.txt", "w") as f:
         f.write(s)
@@ -51,7 +50,7 @@ def connect_to_wlan():
         raise RuntimeError("network connection failed, status: " + str(status))
 
     ip_data = wlan.ifconfig()
-    write_wlan_status("connected\n" + "ip = " + ip_data[0])
+    write_wlan_status("connected\n" + " - ip = " + ip_data[0])
 
 
 def setup_http_server():
@@ -61,21 +60,22 @@ def setup_http_server():
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(host_addr)
     s.listen(1)
-    print("listening on", host_addr)
+
+    print("[HTTP]: listening on", host_addr)
     return s
 
 
 def gate_toggle():
     def relay_on():
         PICO_LED.on()
-        print(f"-/\\ switching relay pins on")
+        print(f"[GATE]: switching relay pins on")
 
         GATE_PIN.on()
 
     def relay_off():
         time.sleep_ms(1500)  # more reliable when it blocks other things
         PICO_LED.off()
-        print(f"-\\/ switching relay pins off")
+        print(f"[GATE]: switching relay pins off")
 
         GATE_PIN.off()
 
@@ -83,19 +83,22 @@ def gate_toggle():
     relay_off()
 
 
-def signal_start():
+def flash_led(count=5, interval=100):
+    """Flashes pico led
+
+    Args:
+        count (int, optional): How many times to flash. Defaults to 5.
+        interval (int, optional): how long led stays on and off, unit is in ms. Defaults to 100.
     """
-    This lets me know that the script started
-    """
-    for _i in range(5):
+    for _i in range(count):
         PICO_LED.on()
-        time.sleep_ms(100)
+        time.sleep_ms(interval)
         PICO_LED.off()
-        time.sleep_ms(100)
+        time.sleep_ms(interval)
 
 
 def main():
-    signal_start()
+    flash_led()
     connect_to_wlan()
 
     html = read_html_template()
@@ -105,9 +108,9 @@ def main():
     while True:
         try:
             cl, addr = s.accept()
-            print("client connected from", addr)
+            print("[HTTP]: client connected from", addr)
             request = cl.recv(1024).decode()
-            print("RAW_REQUEST:\n", request, "\n")
+            print("[HTTP_REQUEST]:\n", request + "\n---REQUEST END---")
 
             # this makes sure that gate=toggle-gate will be found only on request address
             #   and not (for example) in the Referer section
@@ -122,19 +125,23 @@ def main():
                 cl.send("HTTP/1.1 404 Not Found")
             else:
                 cl.send("HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n" + html)
+                # Will reset the index since it was successfully able to get here
+                ERROR_SLEEP.reset()
 
             cl.close()
 
         except OSError as e:
             cl.close()
-            print("connection closed")
+            raise e
 
 
 if __name__ == "__main__":
-    try:
-        # uasyncio.run(main())
-        main()
-    except Exception as e:
-        on_error(e)
-        # so that it would quit and display print to system (debug)
-        raise e
+    while True:
+        try:
+            # uasyncio.run(main())
+            main()
+        except Exception as e:
+            # on error will turn the led on but there is no need to turn it off
+            #   since main flashes led anyway at the start
+            on_error(e)
+            ERROR_SLEEP.sleep()
