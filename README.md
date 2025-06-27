@@ -15,7 +15,7 @@ This is a personal project with the goal of opening a gate from the phone.
 
 ## Components
 
-- Mosfet -- [IRLI540NPbF](https://www.infineon.com/dgdl/irli540npbf.pdf?fileId=5546d462533600a401535664018125c1)
+- MOSFET -- [IRLI540NPbF](https://www.infineon.com/dgdl/irli540npbf.pdf?fileId=5546d462533600a401535664018125c1)
 - Relay -- [LMR2-3D](https://www.tme.eu/Document/cb95bab3047ea17130b1da862f2b7351/LMR-series.pdf)
    > Most likely not needed -- MOSFET can be used instead but I like the audio feedback it gives.
    >
