@@ -9,12 +9,15 @@ This is a personal project with the goal of opening a gate from the phone.
   - [Setup MicroPython](#setup-micropython)
   - [Setup Project on Pico](#setup-project-on-pico)
 - [Circuit](#circuit)
+  - [Circuit Diagram](#circuit-diagram)
+  - [Pico W pinouts](#pico-w-pinouts)
+- [How the final result looks like in real life](#how-the-final-result-looks-like-in-real-life)
 
 ## Components
 
 - Mosfet -- [IRLI540NPbF](https://www.infineon.com/dgdl/irli540npbf.pdf?fileId=5546d462533600a401535664018125c1)
 - Relay -- [LMR2-3D](https://www.tme.eu/Document/cb95bab3047ea17130b1da862f2b7351/LMR-series.pdf)
-   > Most likely not needed -- mosfet can be used instead but I like the audio feedback it gives.
+   > Most likely not needed -- MOSFET can be used instead but I like the audio feedback it gives.
    >
    >Only one side is used so LMR1 is totally fine, this was just locally available.
 - Microcontroller -- [Pico W](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html#pico-1-family)
@@ -68,9 +71,23 @@ MicroPython automatically starts `main.py` on device start.
 
 ## Circuit
 
+### Circuit Diagram
+
+![circuit diagram](dev/circuit-diagram.drawio.svg)
+*Picture of the circuit that is used in this project*
+
+### Pico W pinouts
+
+Pinouts used in this project:
+
+- `3V3(OUT)` (36) -- powering the relay MOSFET circuit
+- `GND` (38) -- final point of the relay MOSFET circuit
+- `GP15` (20) -- driving the MOSFET's gate
+- `GND` (3) -- final point of the circuit that controls the MOSFET
+
 ![Pico W pinout](dev/pico-pinout.svg)
-<!-- source: https://www.raspberrypi.com/documentation/microcontrollers/images/picow-pinou -->
+*Pico W pinouts, source -- <https://www.raspberrypi.com/documentation/microcontrollers/images/picow-pinout.svg>*
+
+## How the final result looks like in real life
 
 <img src="dev/example-live.jpg" width="400" alt="IRL picture of setup" />
-
-TODO: diagram of circuit
