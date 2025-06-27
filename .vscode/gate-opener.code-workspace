@@ -26,6 +26,11 @@
 
     "micropico.openOnStart": true,
     "micropico.syncFolder": "src",
-    "micropico.syncAllFileTypes": true
+    "micropico.syncAllFileTypes": true,
+    "markdownlint.config": {
+      "MD033": {
+        "allowed_elements": ["img"]
+      }
+    }
   }
 }

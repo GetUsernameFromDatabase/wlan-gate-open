@@ -68,9 +68,9 @@ MicroPython automatically starts `main.py` on device start.
 
 ## Circuit
 
-![Pico W pinout](dev\pico-pinout.svg)
+![Pico W pinout](dev/pico-pinout.svg)
 <!-- source: https://www.raspberrypi.com/documentation/microcontrollers/images/picow-pinou -->
 
-![IRL picture of setup](dev\example-live.jpg)
+<img src="dev/example-live.jpg" width="400" alt="IRL picture of setup" />
 
 TODO: diagram of circuit
