@@ -61,6 +61,7 @@ Get the project running on pico
 - populate required fields with information
   - `SSID` with the name of the Wi-Fi you want to connect to
   - `WLAN_PASS` with the password for that connection
+  - `SIGNAL_DURATION` with how long you want the remote to be on in milliseconds
 - upload project to Pico
   - open command palette (`F1` or `Ctrl+Shift+P`) in vscode
   - then `MicroPico: Upload project to Pico`

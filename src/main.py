@@ -2,7 +2,7 @@ import network
 import time
 
 from server import HttpSocket
-from env import SSID, WLAN_PASS
+from env import SSID, WLAN_PASS, SIGNAL_DURATION
 from error_management import ErrorSleep, on_error as on_error_generic
 from machine import Pin
 
@@ -54,7 +54,7 @@ def gate_toggle():
         GATE_PIN.on()
 
     def relay_off():
-        time.sleep_ms(600)
+        time.sleep_ms(SIGNAL_DURATION)
         PICO_LED.off()
         print(f"[GATE]: switching relay pins off")
 
