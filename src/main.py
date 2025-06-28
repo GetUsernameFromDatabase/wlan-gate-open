@@ -1,7 +1,7 @@
 import network
-import socket
 import time
 
+from server import HttpSocket
 from env import SSID, WLAN_PASS
 from error_management import ErrorSleep, on_error as on_error_generic
 from machine import Pin
@@ -9,36 +9,29 @@ from machine import Pin
 GATE_PIN = Pin(15, Pin.OUT)
 PICO_LED = Pin("LED", Pin.OUT)
 
+WLAN = network.WLAN(network.STA_IF)
 ERROR_SLEEP = ErrorSleep()
+S80 = HttpSocket()
 
 
 def on_error(error: Exception):
     return on_error_generic(error, PICO_LED)
 
 
-def read_html_template():
-    """
-    Keeping this as a seperate file so I can easily change html whenever I want
-    """
-    with open("index.html", "r") as f:
-        return f.read()
-
-
 def write_wlan_status(content: str):
-    s = "[WLAN_STATUS]: " + content
+    s = "[WLAN]: " + content
     print(s)
     with open("wlan_status.txt", "w") as f:
         f.write(s)
 
 
 def connect_to_wlan():
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
-    wlan.connect(SSID, WLAN_PASS)
+    WLAN.active(True)
+    WLAN.connect(SSID, WLAN_PASS)
 
     max_wait = 10
     while max_wait > 0:
-        status = wlan.status()
+        status = WLAN.status()
         if status < 0 or status >= 3:
             break
         max_wait -= 1
@@ -47,22 +40,10 @@ def connect_to_wlan():
         time.sleep(1)
 
     if status != 3:
-        raise RuntimeError("network connection failed, status: " + str(status))
+        raise RuntimeError("[WLAN]: network connection failed, status: " + str(status))
 
-    ip_data = wlan.ifconfig()
+    ip_data = WLAN.ifconfig()
     write_wlan_status("connected\n" + " - ip = " + ip_data[0])
-
-
-def setup_http_server():
-    host_addr = socket.getaddrinfo("0.0.0.0", 80)[0][-1]
-    s = socket.socket()
-
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(host_addr)
-    s.listen(1)
-
-    print("[HTTP]: listening on", host_addr)
-    return s
 
 
 def gate_toggle():
@@ -73,7 +54,7 @@ def gate_toggle():
         GATE_PIN.on()
 
     def relay_off():
-        time.sleep_ms(1500)  # more reliable when it blocks other things
+        time.sleep_ms(600)
         PICO_LED.off()
         print(f"[GATE]: switching relay pins off")
 
@@ -101,38 +82,41 @@ def main():
     flash_led()
     connect_to_wlan()
 
-    html = read_html_template()
-    s = setup_http_server()
-
     # Listen for connections
     while True:
         try:
-            cl, addr = s.accept()
-            print("[HTTP]: client connected from", addr)
-            request = cl.recv(1024).decode()
-            print("[HTTP_REQUEST]:\n", request + "\n---REQUEST END---")
+            accept_result = S80.accept()
+            if not accept_result:
+                # no requests found
+                # sometimes pico gets disconnected from the Wi-FI but this does not
+                #   disrupt listening to the socket
+                # ensuring that pico is connected to WLAN
+                if not WLAN.isconnected():
+                    print("[WLAN]: no network connection, retrying")
+                    connect_to_wlan()
+                continue
 
-            # this makes sure that gate=toggle-gate will be found only on request address
-            #   and not (for example) in the Referer section
-            before_http = str(request).split("HTTP", 1)[0].strip()
+            cl, request = accept_result
+            # easier to get the address
+            before_http = request.split("HTTP", 1)[0].strip()
 
             if before_http.startswith("POST"):
                 # currently will not check request body for `gate=toggle-gate`
                 # as this is the only expected behavior for POST
                 gate_toggle()
-                cl.send("HTTP/1.1 303 See Other\r\nLocation: /")
+                cl.redirect_home()
             elif before_http.endswith("/favicon.ico"):
-                cl.send("HTTP/1.1 404 Not Found")
+                cl.send_404()
             else:
-                cl.send("HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n" + html)
+                cl.send_html_200()
                 # Will reset the index since it was successfully able to get here
                 ERROR_SLEEP.reset()
 
-            cl.close()
+            cl.s.close()
 
         except OSError as e:
-            cl.close()
-            raise e
+            cl.s.close()
+            on_error_generic(e, None, "socket_error.log")
 
 
 if __name__ == "__main__":

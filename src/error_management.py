@@ -3,11 +3,30 @@ from machine import Pin
 
 ERROR_LOG_FILE = "error.log"
 
+
 # move this into a utils file when needed elsewhere as well
 # small project so might as well stay here
 def class_print(cls: object, printable: object):
     class_name = cls.__class__.__name__
     print(f"[{class_name}]:", printable)
+
+
+def on_error(error: Exception, indicator_led: Pin | None, path=ERROR_LOG_FILE):
+    """Prints the error and writes it into a file
+
+    Args:
+        error (Exception): the Exception to print and log
+        indicator_led (Pin | None): pin to turn on, meant to notify of error
+        path (str, optional): path of the error file. Defaults to ERROR_LOG_FILE(`error.log`).
+    """
+
+    # This is to notify that something went wrong
+    if indicator_led:
+        indicator_led.on()
+
+    print(str(error))
+    with open(path, "w") as f:
+        f.write(str(error))
 
 
 class ErrorSleep:
@@ -52,18 +71,3 @@ class ErrorSleep:
         class_print(self, f"sleeping for {interval} seconds")
         time.sleep(self.get_current_interval())
         self.next_interval()
-
-
-def on_error(error: Exception, indicator_led: Pin):
-    """Prints the error and writes it into a file
-
-    Args:
-        error (Exception): The Exception to print and log
-        indicator_led (Pin): pin to turn on, meant to describe error
-    """
-    # This is to notify that something went wrong
-    indicator_led.on()
-
-    print(str(error))
-    with open(ERROR_LOG_FILE, "w") as f:
-        f.write(str(error))
